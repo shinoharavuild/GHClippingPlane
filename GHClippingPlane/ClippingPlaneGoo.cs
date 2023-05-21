@@ -25,7 +25,7 @@ namespace GHClippingPlane
         }
         public override BoundingBox Boundingbox => throw new System.NotImplementedException();
         public override string TypeDescription => throw new System.NotImplementedException();
-        public override string TypeName => "Clip Plane";
+        public override string TypeName => ObjectType.ClipPlane.ToString();
         public override Guid ReferenceID { get => base.ReferenceID; set => base.ReferenceID = value; }
         public override IGH_GeometricGoo DuplicateGeometry()
         {
