@@ -1,0 +1,7 @@
+GhButai/obj/
+*.suo
+GhButai/bin/
+GhButai/.vs/
+GhButai/packages/
+.vs/
+*.user
