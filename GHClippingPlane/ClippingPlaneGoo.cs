@@ -1,20 +1,35 @@
 ﻿using Rhino.Geometry;
+using Rhino.DocObjects;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
+using System;
 
 namespace GHClippingPlane
 {
     public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>
     {
-        #region 継承Properties
+        public ClippingPlaneGoo()
+        {
+            this.ReferenceID = default;
+            this.m_value = default;
+        }
+        public ClippingPlaneGoo(ClippingPlaneSurface clippingPlaneSurface)
+        {
+            this.ReferenceID = default;
+            this.m_value = clippingPlaneSurface;
+        }
+        public ClippingPlaneGoo(ObjRef objRef)
+        {
+            this.ReferenceID = objRef.ObjectId;
+            this.m_value = (objRef.Object() as ClippingPlaneObject).ClippingPlaneGeometry;
+        }
         public override BoundingBox Boundingbox => throw new System.NotImplementedException();
         public override string TypeDescription => throw new System.NotImplementedException();
-        public override string TypeName => throw new System.NotImplementedException();
-        #endregion
-        #region 継承Method
+        public override string TypeName => "Clip Plane";
+        public override Guid ReferenceID { get => base.ReferenceID; set => base.ReferenceID = value; }
         public override IGH_GeometricGoo DuplicateGeometry()
         {
-            throw new System.NotImplementedException();
+            return new ClippingPlaneGoo(this.m_value);
         }
         public override BoundingBox GetBoundingBox(Transform xform)
         {
@@ -26,12 +41,18 @@ namespace GHClippingPlane
         }
         public override string ToString()
         {
-            throw new System.NotImplementedException();
+            if (this.ReferenceID != default)
+            {
+                return this.TypeName;
+            }
+            else
+            {
+                return $"Referenced {this.TypeName}";
+            }
         }
         public override IGH_GeometricGoo Transform(Transform xform)
         {
             throw new System.NotImplementedException();
         }
-        #endregion
     }
 }
