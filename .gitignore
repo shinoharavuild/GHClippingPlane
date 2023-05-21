@@ -1,7 +1,7 @@
-GhButai/obj/
+GHClippingPlane/obj/
 *.suo
-GhButai/bin/
-GhButai/.vs/
-GhButai/packages/
+GHClippingPlane/bin/
+GHClippingPlane/.vs/
+GHClippingPlane/packages/
 .vs/
 *.user
