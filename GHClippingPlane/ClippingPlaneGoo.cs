@@ -9,31 +9,26 @@ namespace GHClippingPlane
 {
     public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>, IGH_PreviewData
     {
+        private Guid id = Guid.Empty;
         #region Constructor
-        public ClippingPlaneGoo()
-        {
-            this.ReferenceID = default;
-            this.m_value = default;
-        }
+        public ClippingPlaneGoo() { }
         public ClippingPlaneGoo(ClippingPlaneSurface clippingPlaneSurface)
         {
-            this.ReferenceID = default;
-            this.m_value = clippingPlaneSurface;
+            this.Value = clippingPlaneSurface;
         }
         public ClippingPlaneGoo(Guid id)
         {
             this.ReferenceID = id;
-            this.m_value = (RhinoDoc.ActiveDoc.Objects.FindId(id) as ClippingPlaneObject).ClippingPlaneGeometry;
         }
         #endregion
 
         #region Implementation of GH_GeometricGoo
-        public override BoundingBox Boundingbox => this.m_value.GetBoundingBox((this.m_value as ClippingPlaneSurface).Plane);
-        public override bool IsReferencedGeometry => this.ReferenceID != default;
+        public override BoundingBox Boundingbox => this.Value.GetBoundingBox((this.Value as ClippingPlaneSurface).Plane);
+        public override bool IsReferencedGeometry => this.ReferenceID != Guid.Empty;
         public override Guid ReferenceID
         {
-            get => base.ReferenceID;
-            set => base.ReferenceID = value;
+            get => this.id;
+            set => this.id = value;
         }
         public override string TypeDescription => throw new System.NotImplementedException();
         public override string TypeName => ObjectType.ClipPlane.ToString();
@@ -64,13 +59,27 @@ namespace GHClippingPlane
         {
             throw new System.NotImplementedException();
         }
+        public override ClippingPlaneSurface Value
+        {
+            get
+            {
+                if (this.IsReferencedGeometry)
+                {
+                    RhinoObject rhobj = RhinoDoc.ActiveDoc.Objects.FindId(this.ReferenceID);
+                    return (rhobj as ClippingPlaneObject).ClippingPlaneGeometry;
+                }
+                else
+                    return this.m_value;
+            }
+            set=> this.m_value = value;
+        }
         #endregion
 
         #region Implementation of IGH_PreviewData
         public BoundingBox ClippingBox => this.Boundingbox;
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
-            PlaneSurface planeSrf = (this.m_value as ClippingPlaneSurface) as PlaneSurface;
+            PlaneSurface planeSrf = (this.Value as ClippingPlaneSurface) as PlaneSurface;
             GH_Surface gh_srf = new GH_Surface(planeSrf);
             GH_Rectangle gh_rect = new GH_Rectangle();
             gh_rect.CastFrom(gh_srf);
