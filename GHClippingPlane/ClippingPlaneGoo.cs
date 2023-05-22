@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+﻿using Rhino;
+using Rhino.Geometry;
 using Rhino.DocObjects;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
@@ -6,8 +7,9 @@ using System;
 
 namespace GHClippingPlane
 {
-    public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>
+    public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>, IGH_PreviewData
     {
+        #region Constructor
         public ClippingPlaneGoo()
         {
             this.ReferenceID = default;
@@ -18,15 +20,23 @@ namespace GHClippingPlane
             this.ReferenceID = default;
             this.m_value = clippingPlaneSurface;
         }
-        public ClippingPlaneGoo(ObjRef objRef)
+        public ClippingPlaneGoo(Guid id)
         {
-            this.ReferenceID = objRef.ObjectId;
-            this.m_value = (objRef.Object() as ClippingPlaneObject).ClippingPlaneGeometry;
+            this.ReferenceID = id;
+            this.m_value = (RhinoDoc.ActiveDoc.Objects.FindId(id) as ClippingPlaneObject).ClippingPlaneGeometry;
         }
-        public override BoundingBox Boundingbox => throw new System.NotImplementedException();
+        #endregion
+
+        #region Implementation of GH_GeometricGoo
+        public override BoundingBox Boundingbox => this.m_value.GetBoundingBox((this.m_value as ClippingPlaneSurface).Plane);
+        public override bool IsReferencedGeometry => this.ReferenceID != default;
+        public override Guid ReferenceID
+        {
+            get => base.ReferenceID;
+            set => base.ReferenceID = value;
+        }
         public override string TypeDescription => throw new System.NotImplementedException();
         public override string TypeName => ObjectType.ClipPlane.ToString();
-        public override Guid ReferenceID { get => base.ReferenceID; set => base.ReferenceID = value; }
         public override IGH_GeometricGoo DuplicateGeometry()
         {
             return new ClippingPlaneGoo(this.m_value);
@@ -41,18 +51,35 @@ namespace GHClippingPlane
         }
         public override string ToString()
         {
-            if (this.ReferenceID != default)
+            if (this.IsReferencedGeometry)
             {
-                return this.TypeName;
+                return $"Referenced {this.TypeName}";
             }
             else
             {
-                return $"Referenced {this.TypeName}";
+                return this.TypeName;
             }
         }
         public override IGH_GeometricGoo Transform(Transform xform)
         {
             throw new System.NotImplementedException();
         }
+        #endregion
+
+        #region Implementation of IGH_PreviewData
+        public BoundingBox ClippingBox => this.Boundingbox;
+        public void DrawViewportWires(GH_PreviewWireArgs args)
+        {
+            PlaneSurface planeSrf = (this.m_value as ClippingPlaneSurface) as PlaneSurface;
+            GH_Surface gh_srf = new GH_Surface(planeSrf);
+            GH_Rectangle gh_rect = new GH_Rectangle();
+            gh_rect.CastFrom(gh_srf);
+
+            gh_rect.DrawViewportWires(args);
+
+
+        }
+        public void DrawViewportMeshes(GH_PreviewMeshArgs args) { }
+        #endregion
     }
 }
