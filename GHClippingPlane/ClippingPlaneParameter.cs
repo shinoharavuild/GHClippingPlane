@@ -1,18 +1,19 @@
 ﻿using Rhino.Input;
 using Rhino.Input.Custom;
 using Rhino.DocObjects;
+using Rhino.Geometry;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace GHClippingPlane
 {
-    public class ClippingPlaneParameter : GH_PersistentGeometryParam<ClippingPlaneGoo>
+    public class ClippingPlaneParameter : GH_PersistentGeometryParam<ClippingPlaneGoo>, IGH_PreviewObject
     {
         public ClippingPlaneParameter() : base(new GH_InstanceDescription("Clipping Plane", "CP", "", "Params", "Geometry")) { }
-
+        
+        #region Implementation of GH_PersistentGeometryParam
         public override Guid ComponentGuid => new Guid("325B5A72-A52B-41B9-B28D-CFF715848425");
         protected override GH_GetterResult Prompt_Singular(ref ClippingPlaneGoo value)
         {
@@ -24,7 +25,7 @@ namespace GHClippingPlane
             switch (getObject.Get())
             {
                 case GetResult.Object:
-                    value = new ClippingPlaneGoo(getObject.Object(0));
+                    value = new ClippingPlaneGoo(getObject.Object(0).ObjectId);
                     return GH_GetterResult.success;
                 case GetResult.Nothing:
                     return GH_GetterResult.accept;
@@ -42,7 +43,7 @@ namespace GHClippingPlane
             switch (getObject.GetMultiple(1,0))
             {
                 case GetResult.Object:
-                    values = getObject.Objects().Select(obj => new ClippingPlaneGoo(obj)).ToList();
+                    values = getObject.Objects().Select(obj => new ClippingPlaneGoo(obj.ObjectId)).ToList();
                     return GH_GetterResult.success;
                 case GetResult.Nothing:
                     return GH_GetterResult.accept;
@@ -50,5 +51,20 @@ namespace GHClippingPlane
                     return GH_GetterResult.cancel;
             }
         }
+        #endregion
+
+        #region Implementation of IGH_PreviewObject
+        public bool Hidden { get; set; }
+        public bool IsPreviewCapable => true;
+        public BoundingBox ClippingBox => base.Preview_ComputeClippingBox();
+        public void DrawViewportMeshes(IGH_PreviewArgs args)
+        {
+            base.Preview_DrawMeshes(args);
+        }
+        public void DrawViewportWires(IGH_PreviewArgs args)
+        {
+            base.Preview_DrawWires(args);
+        }
+        #endregion
     }
 }
