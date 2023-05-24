@@ -1,0 +1,7 @@
+GHClippingPlane/obj/
+*.suo
+GHClippingPlane/bin/
+GHClippingPlane/.vs/
+GHClippingPlane/packages/
+.vs/
+*.user
