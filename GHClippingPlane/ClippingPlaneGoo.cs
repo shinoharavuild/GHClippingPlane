@@ -4,20 +4,25 @@ using Rhino.DocObjects;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GHClippingPlane
 {
-    public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>, IGH_PreviewData
+    public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>, IGH_PreviewData, IGH_BakeAwareData
     {
+        private List<Guid> ViewportIDs { get; }
         #region Constructor
         public ClippingPlaneGoo() { }
         public ClippingPlaneGoo(ClippingPlaneSurface clippingPlaneSurface)
         {
             this.Value = clippingPlaneSurface;
+            this.ViewportIDs = default;
         }
         public ClippingPlaneGoo(Guid id)
         {
             this.ReferenceID = id;
+            this.ViewportIDs = this.Value.ViewportIds().ToList();
         }
         #endregion
 
@@ -84,10 +89,8 @@ namespace GHClippingPlane
         public BoundingBox ClippingBox => this.Boundingbox;
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
-            PlaneSurface planeSrf = (this.Value as ClippingPlaneSurface) as PlaneSurface;
-            GH_Surface gh_srf = new GH_Surface(planeSrf);
             GH_Rectangle gh_rect = new GH_Rectangle();
-            gh_rect.CastFrom(gh_srf);
+            gh_rect.CastFrom(new GH_Surface(this.Value));
 
             gh_rect.DrawViewportWires(args);
 
@@ -106,6 +109,17 @@ namespace GHClippingPlane
             GH_Surface gh_srf = new GH_Surface(planeSrf);
             gh_srf.DrawViewportMeshes(args);
         }
+        #endregion
+
+        #region Implementation of IGH_BakeAwareData
+        public bool BakeGeometry(RhinoDoc doc, ObjectAttributes att, out Guid obj_guid)
+        {
+            GH_Rectangle gh_rect = new GH_Rectangle();
+            gh_rect.CastFrom(new GH_Surface(this.Value));
+            obj_guid = doc.Objects.AddClippingPlane(gh_rect.Value.Plane, gh_rect.Value.Width, gh_rect.Value.Height, ViewportIDs,att);
+            return true;
+        }
+
         #endregion
     }
 }
