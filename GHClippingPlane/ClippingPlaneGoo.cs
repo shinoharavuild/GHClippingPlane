@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+﻿using Rhino;
+using Rhino.Geometry;
 using Rhino.DocObjects;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
@@ -6,30 +7,32 @@ using System;
 
 namespace GHClippingPlane
 {
-    public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>
+    public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>, IGH_PreviewData
     {
-        public ClippingPlaneGoo()
-        {
-            this.ReferenceID = default;
-            this.m_value = default;
-        }
+        #region Constructor
+        public ClippingPlaneGoo() { }
         public ClippingPlaneGoo(ClippingPlaneSurface clippingPlaneSurface)
         {
-            this.ReferenceID = default;
-            this.m_value = clippingPlaneSurface;
+            this.Value = clippingPlaneSurface;
         }
-        public ClippingPlaneGoo(ObjRef objRef)
+        public ClippingPlaneGoo(Guid id)
         {
-            this.ReferenceID = objRef.ObjectId;
-            this.m_value = (objRef.Object() as ClippingPlaneObject).ClippingPlaneGeometry;
+            this.ReferenceID = id;
         }
-        public override BoundingBox Boundingbox => throw new System.NotImplementedException();
+        #endregion
+
+        #region Implementation of GH_GeometricGoo
+        public override BoundingBox Boundingbox => this.Value.GetBoundingBox((this.Value as ClippingPlaneSurface).Plane);
+        public override bool IsReferencedGeometry => this.ReferenceID != Guid.Empty;
+        public override Guid ReferenceID { get; set; }
         public override string TypeDescription => throw new System.NotImplementedException();
         public override string TypeName => ObjectType.ClipPlane.ToString();
-        public override Guid ReferenceID { get => base.ReferenceID; set => base.ReferenceID = value; }
         public override IGH_GeometricGoo DuplicateGeometry()
         {
-            return new ClippingPlaneGoo(this.m_value);
+            if (this.IsReferencedGeometry)
+                return new ClippingPlaneGoo(this.ReferenceID);
+            else
+                return new ClippingPlaneGoo(this.Value);
         }
         public override BoundingBox GetBoundingBox(Transform xform)
         {
@@ -41,18 +44,68 @@ namespace GHClippingPlane
         }
         public override string ToString()
         {
-            if (this.ReferenceID != default)
+            if (this.IsReferencedGeometry)
             {
-                return this.TypeName;
+                return $"Referenced {this.TypeName}";
             }
             else
             {
-                return $"Referenced {this.TypeName}";
+                return this.TypeName;
             }
         }
         public override IGH_GeometricGoo Transform(Transform xform)
         {
-            throw new System.NotImplementedException();
+            ClippingPlaneGoo duplicated = new ClippingPlaneGoo(this.Value);
+            if (xform == null)
+                return null;
+            else
+            {
+                duplicated.Value.Transform(xform);
+                return duplicated;
+            }
         }
+        public override ClippingPlaneSurface Value
+        {
+            get
+            {
+                if (this.IsReferencedGeometry)
+                {
+                    RhinoObject rhobj = RhinoDoc.ActiveDoc.Objects.FindId(this.ReferenceID);
+                    return (rhobj as ClippingPlaneObject).ClippingPlaneGeometry;
+                }
+                else
+                    return this.m_value;
+            }
+            set=> this.m_value = value;
+        }
+        #endregion
+
+        #region Implementation of IGH_PreviewData
+        public BoundingBox ClippingBox => this.Boundingbox;
+        public void DrawViewportWires(GH_PreviewWireArgs args)
+        {
+            PlaneSurface planeSrf = (this.Value as ClippingPlaneSurface) as PlaneSurface;
+            GH_Surface gh_srf = new GH_Surface(planeSrf);
+            GH_Rectangle gh_rect = new GH_Rectangle();
+            gh_rect.CastFrom(gh_srf);
+
+            gh_rect.DrawViewportWires(args);
+
+            Line[] lines =
+            {
+                new Line(gh_rect.Value.PointAt(0.5,0),gh_rect.Value.PointAt(0.5,1)),
+                new Line(gh_rect.Value.PointAt(0.5,0.5),gh_rect.Value.PointAt(0,0.5)),
+                new Line(gh_rect.Value.PointAt(0.5, 0.5), gh_rect.Value.PointAt(0.5, 0.5) + gh_rect.Value.Plane.Normal * gh_rect.Value.Width / 2),
+             };
+            foreach (Line line in lines)
+                new GH_Line(line).DrawViewportWires(args);
+        }
+        public void DrawViewportMeshes(GH_PreviewMeshArgs args)
+        {
+            PlaneSurface planeSrf = (this.Value as ClippingPlaneSurface) as PlaneSurface;
+            GH_Surface gh_srf = new GH_Surface(planeSrf);
+            gh_srf.DrawViewportMeshes(args);
+        }
+        #endregion
     }
 }
