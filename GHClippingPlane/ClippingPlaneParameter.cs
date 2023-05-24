@@ -57,7 +57,10 @@ namespace GHClippingPlane
         public bool Hidden { get; set; }
         public bool IsPreviewCapable => true;
         public BoundingBox ClippingBox => base.Preview_ComputeClippingBox();
-        public void DrawViewportMeshes(IGH_PreviewArgs args) { }
+        public void DrawViewportMeshes(IGH_PreviewArgs args)
+        {
+            base.Preview_DrawMeshes(args);
+        }
         public void DrawViewportWires(IGH_PreviewArgs args)
         {
             base.Preview_DrawWires(args);

@@ -55,7 +55,14 @@ namespace GHClippingPlane
         }
         public override IGH_GeometricGoo Transform(Transform xform)
         {
-            throw new System.NotImplementedException();
+            ClippingPlaneGoo duplicated = new ClippingPlaneGoo(this.Value);
+            if (xform == null)
+                return null;
+            else
+            {
+                duplicated.Value.Transform(xform);
+                return duplicated;
+            }
         }
         public override ClippingPlaneSurface Value
         {
@@ -84,9 +91,21 @@ namespace GHClippingPlane
 
             gh_rect.DrawViewportWires(args);
 
-
+            Line[] lines =
+            {
+                new Line(gh_rect.Value.PointAt(0.5,0),gh_rect.Value.PointAt(0.5,1)),
+                new Line(gh_rect.Value.PointAt(0.5,0.5),gh_rect.Value.PointAt(0,0.5)),
+                new Line(gh_rect.Value.PointAt(0.5, 0.5), gh_rect.Value.PointAt(0.5, 0.5) + gh_rect.Value.Plane.Normal * gh_rect.Value.Width / 2),
+             };
+            foreach (Line line in lines)
+                new GH_Line(line).DrawViewportWires(args);
         }
-        public void DrawViewportMeshes(GH_PreviewMeshArgs args) { }
+        public void DrawViewportMeshes(GH_PreviewMeshArgs args)
+        {
+            PlaneSurface planeSrf = (this.Value as ClippingPlaneSurface) as PlaneSurface;
+            GH_Surface gh_srf = new GH_Surface(planeSrf);
+            gh_srf.DrawViewportMeshes(args);
+        }
         #endregion
     }
 }
