@@ -9,7 +9,6 @@ namespace GHClippingPlane
 {
     public class ClippingPlaneGoo : GH_GeometricGoo<ClippingPlaneSurface>, IGH_PreviewData
     {
-        private Guid id = Guid.Empty;
         #region Constructor
         public ClippingPlaneGoo() { }
         public ClippingPlaneGoo(ClippingPlaneSurface clippingPlaneSurface)
@@ -25,16 +24,15 @@ namespace GHClippingPlane
         #region Implementation of GH_GeometricGoo
         public override BoundingBox Boundingbox => this.Value.GetBoundingBox((this.Value as ClippingPlaneSurface).Plane);
         public override bool IsReferencedGeometry => this.ReferenceID != Guid.Empty;
-        public override Guid ReferenceID
-        {
-            get => this.id;
-            set => this.id = value;
-        }
+        public override Guid ReferenceID { get; set; }
         public override string TypeDescription => throw new System.NotImplementedException();
         public override string TypeName => ObjectType.ClipPlane.ToString();
         public override IGH_GeometricGoo DuplicateGeometry()
         {
-            return new ClippingPlaneGoo(this.m_value);
+            if (this.IsReferencedGeometry)
+                return new ClippingPlaneGoo(this.ReferenceID);
+            else
+                return new ClippingPlaneGoo(this.Value);
         }
         public override BoundingBox GetBoundingBox(Transform xform)
         {
